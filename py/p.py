@@ -29,14 +29,31 @@ cursor = db.cursor()
 import datetime
 today = datetime.date.today()
 preweek = today - datetime.timedelta(days=8)
-sql_query_posts = "select ID,post_content from " + db_config['prefix'] + "_posts p where p.post_date > '" + str(preweek)  + "' and post_status='publish'"
+sql_query_posts = "select ID,post_content from " + db_config['prefix'] + "_posts p where p.post_date > '" + str(preweek)  + "' and post_status='publish' and post_type='post'"
 cursor.execute(sql_query_posts)
 posts = cursor.fetchall()
 
 post_ids = []
+id2index = {}
 post_contents = []
 for i in range(0, len(posts)):
+	id2index[str(posts[i][0])] = i
 	post_ids.append(posts[i][0])
-	post_content.append(posts[i][1])
+	post_contents.append(posts[i][1])
 
+print("The number of posts:" + str(len(post_contents)))
+
+tfidf_matrix = tf.fit_transform(post_contents)
+print(id2index)
+
+from sklearn.metrics.pairwise import linear_kernel
+cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+
+def get_recommendations(postid, cosine_sim = cosine_sim):
+	idx = id2index[str(postid)]
+	sim_scores = list(enumerate(cosine_sim[idx]))
+	sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+	sim_scores = sim_scores[1:11]	
+	post_indices = [i[0] for i in sim_scores]
+	return post_indices
 
